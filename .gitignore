@@ -3,3 +3,5 @@ dist/
 .env
 .vercel/
 .vercel
+.DS_Store
+*.ehpk

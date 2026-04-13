@@ -1,5 +1,52 @@
 import crypto from 'crypto'
 
+// ---------------------------------------------------------------------------
+// Unicode normalization
+// Twitter uses Mathematical Alphanumeric Symbols (U+1D400-U+1D7FF) to fake
+// bold/italic/monospace formatting. Map them back to plain ASCII.
+// ---------------------------------------------------------------------------
+
+const PLAIN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
+// Each entry: [unicodeStart, indexIntoPlain, count]
+const MATH_RANGES = [
+  [0x1D400, 0, 26], [0x1D41A, 26, 26],  // Bold
+  [0x1D434, 0, 26], [0x1D44E, 26, 26],  // Italic
+  [0x1D468, 0, 26], [0x1D482, 26, 26],  // Bold Italic
+  [0x1D49C, 0, 26], [0x1D4B6, 26, 26],  // Script
+  [0x1D4D0, 0, 26], [0x1D4EA, 26, 26],  // Bold Script
+  [0x1D504, 0, 26], [0x1D51E, 26, 26],  // Fraktur
+  [0x1D538, 0, 26], [0x1D552, 26, 26],  // Double-struck
+  [0x1D56C, 0, 26], [0x1D586, 26, 26],  // Bold Fraktur
+  [0x1D5A0, 0, 26], [0x1D5BA, 26, 26],  // Sans-serif
+  [0x1D5D4, 0, 26], [0x1D5EE, 26, 26],  // Sans-serif Bold
+  [0x1D608, 0, 26], [0x1D622, 26, 26],  // Sans-serif Italic
+  [0x1D63C, 0, 26], [0x1D656, 26, 26],  // Sans-serif Bold Italic
+  [0x1D670, 0, 26], [0x1D68A, 26, 26],  // Monospace
+  [0x1D7CE, 52, 10], [0x1D7D8, 52, 10], // Bold & double-struck digits
+  [0x1D7E2, 52, 10], [0x1D7EC, 52, 10], // Sans-serif & sans-serif bold digits
+  [0x1D7F6, 52, 10],                     // Monospace digits
+]
+
+const MATH_CHAR_MAP = (() => {
+  const map = {}
+  for (const [start, offset, count] of MATH_RANGES) {
+    for (let i = 0; i < count; i++) map[start + i] = PLAIN[offset + i]
+  }
+  return map
+})()
+
+function normalizeTweetText(text) {
+  // Replace math unicode chars, normalize whitespace/newlines
+  let out = ''
+  for (const char of text) {
+    const cp = char.codePointAt(0)
+    out += MATH_CHAR_MAP[cp] ?? char
+  }
+  // Collapse multiple newlines to a single space (glasses display is linear)
+  return out.replace(/\s*\n+\s*/g, ' ').trim()
+}
+
 // OAuth 1.0a signing using Node's built-in crypto - no extra deps needed
 
 function percentEncode(str) {
@@ -133,7 +180,7 @@ export default async function handler(req, res) {
 
     const tweets = (data.data ?? []).map((t) => ({
       id: t.id,
-      text: t.text,
+      text: normalizeTweetText(t.text),
       author: userMap[t.author_id] ?? 'unknown',
       created_at: t.created_at,
     }))
