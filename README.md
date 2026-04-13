@@ -12,81 +12,37 @@ Navigate with the temple touchpad or R1 ring:
 
 ## Running in beta
 
-This app isn't published to Even Hub yet, so you'll need to sideload it yourself.
+This app isn't published to Even Hub yet, so you'll need to sideload it yourself. No coding required - just get your API keys and load the app.
 
-### 1. Clone the repo
+### 1. Get your X API credentials
+
+Go to [developer.twitter.com](https://developer.twitter.com) and create a project + app. You need **Read** permissions enabled.
+
+From your app's "Keys and Tokens" page, grab:
+- Consumer Key (API Key)
+- Consumer Secret (API Secret)
+- Access Token
+- Access Token Secret
+
+### 2. Sideload the app
+
+Download `out.ehpk` from the [latest release](https://github.com/sommohapatra/x-for-even-g2/releases) and drag it into [hub.evenrealities.com](https://hub.evenrealities.com) to install it on your glasses.
+
+### 3. Connect your account
+
+On first launch, the app will show a setup screen on your phone. Enter your four API keys and tap Connect. Your credentials are stored only on your device and used to fetch your personal timeline.
+
+That's it.
+
+---
+
+## Local dev
 
 ```bash
 git clone https://github.com/sommohapatra/x-for-even-g2.git
 cd x-for-even-g2
 npm install
-```
-
-### 2. Set up Twitter API credentials
-
-Go to [developer.twitter.com](https://developer.twitter.com) and create a project + app. You need **Read** permissions enabled.
-
-From your app's "Keys and Tokens" page, grab:
-- Consumer Key
-- Consumer Secret
-- Access Token
-- Access Token Secret
-
-Look up your numeric user ID (one-time):
-```bash
-curl -H "Authorization: Bearer YOUR_BEARER_TOKEN" \
-  "https://api.twitter.com/2/users/by/username/YOUR_HANDLE"
-```
-
-Create a `.env` file in the project root:
-```
-TWITTER_API_KEY=your_consumer_key
-TWITTER_API_SECRET=your_consumer_secret
-TWITTER_ACCESS_TOKEN=your_access_token
-TWITTER_ACCESS_SECRET=your_access_secret
-TWITTER_USER_ID=your_numeric_user_id
-```
-
-### 3. Deploy the backend to Vercel
-
-The API function runs server-side to keep your credentials out of the app bundle.
-
-```bash
-npx vercel --prod
-```
-
-When prompted, add each env var:
-```bash
-npx vercel env add TWITTER_API_KEY
-npx vercel env add TWITTER_API_SECRET
-npx vercel env add TWITTER_ACCESS_TOKEN
-npx vercel env add TWITTER_ACCESS_SECRET
-npx vercel env add TWITTER_USER_ID
-```
-
-Then redeploy so the vars take effect:
-```bash
-npx vercel --prod
-```
-
-Update the API URL in `src/main.js` to point to your deployment:
-```js
-const res = await fetch('https://YOUR_PROJECT.vercel.app/api/twitter-feed?count=20')
-```
-
-### 4. Build and sideload onto your glasses
-
-```bash
-npm run build
-npx @evenrealities/evenhub-cli pack dist/app.json dist
-```
-
-Drag the generated `out.ehpk` file into [hub.evenrealities.com](https://hub.evenrealities.com) to install it on your glasses.
-
-### Local dev
-
-```bash
 npx vercel dev   # runs frontend + API on localhost:3000
 ```
 
-Arrow keys scroll tweets, Enter jumps to next tweet, R refreshes.
+Arrow keys scroll tweets, Enter jumps to next tweet, R refreshes. The setup form will appear on first run - enter your keys there, or clear `localStorage` to reset.
