@@ -62,6 +62,7 @@ function buildOAuthHeader(method, url, queryParams, oauthKeys) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'x-twitter-api-key, x-twitter-api-secret, x-twitter-access-token, x-twitter-access-secret, x-twitter-user-id')
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
@@ -71,14 +72,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const apiKey = process.env.TWITTER_API_KEY
-  const apiSecret = process.env.TWITTER_API_SECRET
-  const accessToken = process.env.TWITTER_ACCESS_TOKEN
-  const accessSecret = process.env.TWITTER_ACCESS_SECRET
-  const userId = process.env.TWITTER_USER_ID
+  // Accept creds from request headers (multi-user) or fall back to env vars (owner)
+  const apiKey      = req.headers['x-twitter-api-key']      || process.env.TWITTER_API_KEY
+  const apiSecret   = req.headers['x-twitter-api-secret']   || process.env.TWITTER_API_SECRET
+  const accessToken = req.headers['x-twitter-access-token'] || process.env.TWITTER_ACCESS_TOKEN
+  const accessSecret = req.headers['x-twitter-access-secret'] || process.env.TWITTER_ACCESS_SECRET
+  const userId      = req.headers['x-twitter-user-id']      || process.env.TWITTER_USER_ID
 
   if (!apiKey || !apiSecret || !accessToken || !accessSecret || !userId) {
-    return res.status(500).json({ error: 'Missing Twitter credentials in environment' })
+    return res.status(401).json({ error: 'Missing Twitter credentials. Set up the app first.' })
   }
 
   const count = Math.min(parseInt(req.query?.count ?? '20', 10), 100)
@@ -136,7 +138,11 @@ export default async function handler(req, res) {
       created_at: t.created_at,
     }))
 
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
+    // Only cache when using server-side env var creds (single owner)
+    // Skip caching for user-supplied creds to avoid serving one person's feed to another
+    if (!req.headers['x-twitter-api-key']) {
+      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600')
+    }
     return res.status(200).json({ tweets })
   } catch (err) {
     console.error('Fetch error:', err)

@@ -28,6 +28,7 @@ const FOOTER_Y = DISPLAY_H - PADDING - FOOTER_H
 // ---------------------------------------------------------------------------
 
 let bridge = null
+let creds = null     // { apiKey, apiSecret, accessToken, accessSecret, userId }
 let pages = []       // { handle, text, tweetNum, totalTweets, pageNum, totalPagesInTweet }
 let currentPage = 0
 let started = false  // tracks whether createStartUpPageContainer has been called
@@ -166,7 +167,15 @@ async function fetchTweets() {
   await renderMessage('Loading...')
 
   try {
-    const res = await fetch('https://x-for-even-g2.vercel.app/api/twitter-feed?count=20')
+    const res = await fetch('https://x-for-even-g2.vercel.app/api/twitter-feed?count=20', {
+      headers: {
+        'x-twitter-api-key':      creds.apiKey,
+        'x-twitter-api-secret':   creds.apiSecret,
+        'x-twitter-access-token': creds.accessToken,
+        'x-twitter-access-secret':creds.accessSecret,
+        'x-twitter-user-id':      creds.userId,
+      },
+    })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const { tweets } = await res.json()
 
@@ -312,12 +321,13 @@ async function handleEvent(data) {
 
 function makeBrowserStub() {
   console.info('[G2 dev] Even Hub bridge not detected - using browser stub')
-  console.info('[G2 dev] Trigger events via: window._g2Event({ textEvent: "SCROLL_BOTTOM_EVENT" })')
   return {
     createStartUpPageContainer: async (p) => { console.log('[bridge] createStartUpPageContainer', p); return 0 },
     rebuildPageContainer: async (p) => { console.log('[bridge] rebuildPageContainer', p); return true },
     textContainerUpgrade: async (p) => { console.log('[bridge] textContainerUpgrade', p); return true },
     onEvenHubEvent: (cb) => { window._g2Event = cb },
+    getLocalStorage: async (key) => window.localStorage.getItem(key),
+    setLocalStorage: async (key, value) => window.localStorage.setItem(key, value),
   }
 }
 
@@ -329,6 +339,65 @@ async function getBridge() {
       .then((b) => { clearTimeout(timeout); resolve(b) })
       .catch(() => { clearTimeout(timeout); resolve(makeBrowserStub()) })
   })
+}
+
+// ---------------------------------------------------------------------------
+// Setup screen
+// ---------------------------------------------------------------------------
+
+function showSetup() {
+  document.getElementById('setup').style.display = 'flex'
+  document.getElementById('glasses').style.display = 'none'
+}
+
+function showGlasses() {
+  document.getElementById('setup').style.display = 'none'
+  document.getElementById('glasses').style.display = 'block'
+}
+
+function parseCreds(raw) {
+  try { return JSON.parse(raw) } catch { return null }
+}
+
+async function loadCreds() {
+  const raw = await bridge.getLocalStorage('twitter_creds')
+  return parseCreds(raw)
+}
+
+async function saveCreds(c) {
+  await bridge.setLocalStorage('twitter_creds', JSON.stringify(c))
+}
+
+function setupForm() {
+  document.getElementById('saveBtn').addEventListener('click', async () => {
+    const apiKey      = document.getElementById('apiKey').value.trim()
+    const apiSecret   = document.getElementById('apiSecret').value.trim()
+    const accessToken = document.getElementById('accessToken').value.trim()
+    const accessSecret = document.getElementById('accessSecret').value.trim()
+    const errorEl     = document.getElementById('setupError')
+
+    if (!apiKey || !apiSecret || !accessToken || !accessSecret) {
+      errorEl.textContent = 'All four fields are required.'
+      return
+    }
+
+    // Derive user ID from access token (digits before the first dash)
+    const userId = accessToken.split('-')[0]
+    if (!/^\d+$/.test(userId)) {
+      errorEl.textContent = 'Access token format looks wrong - should start with your numeric user ID.'
+      return
+    }
+
+    errorEl.textContent = ''
+    creds = { apiKey, apiSecret, accessToken, accessSecret, userId }
+    await saveCreds(creds)
+    startFeed()
+  })
+}
+
+async function startFeed() {
+  showGlasses()
+  await fetchTweets()
 }
 
 // ---------------------------------------------------------------------------
@@ -346,7 +415,14 @@ async function main() {
     if (e.key === 'r')         handleEvent({ sysEvent: { eventType: 3, eventSource: 1 } })
   })
 
-  await fetchTweets()
+  setupForm()
+
+  creds = await loadCreds()
+  if (creds) {
+    startFeed()
+  } else {
+    showSetup()
+  }
 }
 
 main().catch(console.error)

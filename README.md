@@ -8,7 +8,7 @@ Navigate with the temple touchpad or R1 ring:
 - Single tap - jump to next tweet
 - Double tap - refresh the feed
 
-![screenshot](public/x_screenshot_576x288.png)
+![screenshot](public/x_screenshot.png)
 
 ## Running in beta
 
