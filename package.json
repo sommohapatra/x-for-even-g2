@@ -1,0 +1,17 @@
+{
+  "name": "x-for-even-g2",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@evenrealities/even_hub_sdk": "^0.0.10"
+  },
+  "devDependencies": {
+    "@evenrealities/evenhub-simulator": "^0.7.1",
+    "vite": "^5.4.0"
+  }
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Twitter Feed - G2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000;
+      color: #fff;
+      font-family: monospace;
+      font-size: 14px;
+      width: 576px;
+      height: 288px;
+      overflow: hidden;
+    }
+    #app {
+      width: 576px;
+      height: 288px;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow: hidden;
+    }
+    #header {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #aaa;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #333;
+    }
+    #body {
+      flex: 1;
+      min-height: 0;
+      padding-top: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+      overflow: hidden;
+      word-break: break-word;
+    }
+    #footer {
+      flex-shrink: 0;
+      padding-top: 5px;
+      font-size: 10px;
+      color: #555;
+      border-top: 1px solid #222;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="header">
+      <span id="handle"></span>
+      <span id="counter"></span>
+    </div>
+    <div id="body" id="tweet-body">Loading...</div>
+    <div id="footer">^ prev  |  v next  |  tap: refresh</div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

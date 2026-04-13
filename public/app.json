@@ -1,0 +1,17 @@
+{
+  "package_id": "com.sommohapatra.g2twitter",
+  "edition": "202601",
+  "name": "Twitter Feed",
+  "version": "1.0.4",
+  "min_app_version": "1.0.0",
+  "min_sdk_version": "1.0.0",
+  "icon": "icon.png",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Fetch your Twitter home timeline"
+    }
+  ],
+  "supported_languages": ["en"]
+}
